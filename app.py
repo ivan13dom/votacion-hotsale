@@ -84,4 +84,6 @@ def descargar():
         return f"Error al acceder a los datos: {e}", 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Usar el puerto que Render asigna, por defecto 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
