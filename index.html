@@ -1,13 +1,83 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Encuesta</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notificación de Envío</title>
+  <style>
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+    }
+    .center {
+      text-align: center;
+    }
+    .button {
+      text-decoration: none;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 24px;
+      display: inline-block;
+      font-size: 15px;
+    }
+    .btn-positive {
+      background-color: #4CAF50;
+    }
+    .btn-negative {
+      background-color: #F44336;
+    }
+    .btn-track {
+      background-color: #d71920;
+      max-width: 200px;
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+    }
+    small a {
+      color: #d71920;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
-  <h2>¿Cómo fue tu experiencia?</h2>
-  <form action="/votar" method="post">
-    <button type="submit">Votar</button>
-  </form>
+  <div class="container">
+    <div class="center">
+      <img src="https://componentesui.blob.core.windows.net/recursos/iconografia-gla/estados-de-envio/relleno/png/entregado-sucursal-verde.png" alt="Entregado" width="80" />
+      <h1 style="color: #616161; font-size: 18px;">¡Envío entregado!</h1>
+      <p style="color: #757575; font-size: 16px;"><em>N° de envío: /*NumeroDeEnvio*/</em></p>
+    </div>
+
+    <h2 style="color: #d71920; font-size: 23px;">Hola /*DestinatarioNombreSolo*/</h2>
+    <p style="color: #616161; font-size: 16px;">
+      Ya entregamos tu envío de <b>/*NombreFantasia*/</b> en nuestra <b>sucursal /*SucursalDescripcion*/</b> (/*SucursalDireccion*/), a las /*HoraEvento*/.
+      Agradecemos tu colaboración en la entrega.
+    </p>
+
+    <div class="center">
+      <p style="color: #616161; font-size: 16px;">¿Cómo fue tu experiencia al retirar el envío?</p>
+      <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=positivo&envio=/*NumeroDeEnvio*/" class="button btn-positive">Estoy conforme</a>
+      <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=negativo&envio=/*NumeroDeEnvio*/" class="button btn-negative" style="margin-left: 10px;">No estoy conforme</a>
+    </div>
+
+    <a href="https://www.andreani.com/envio/*NumeroDeEnvio*/" class="button btn-track">Ver mi envío</a>
+
+    <div class="center">
+      <small>Administrá todos tus envíos desde <a href="https://www.andreani.com/#!/personas">andreani.com</a></small>
+    </div>
+
+    <div style="color:#636363; font-size: 14px; text-align: left; margin-top: 20px;">
+      <p><span>{{NPS - Entrega en Sucursal / Punto HOP}}</span></p>
+      <p><span>{{Serv. Viaje sin equipaje}}</span></p>
+      <p><span>{{Novedades Covid-19}}</span></p>
+    </div>
+  </div>
 </body>
 </html>
