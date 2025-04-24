@@ -1,63 +1,90 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Encuesta Hot Sale</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .opciones {
-      margin: 1rem 0;
-    }
-    label {
-      display: block;
-      margin: 0.5rem 0;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>¿Cómo fue tu experiencia?</h1>
-    <form>
-      <div class="opciones">
-        <label><input type="radio" name="experiencia" value="excelente" /> Excelente</label>
-        <label><input type="radio" name="experiencia" value="buena" /> Buena</label>
-        <label><input type="radio" name="experiencia" value="regular" /> Regular</label>
-        <label><input type="radio" name="experiencia" value="mala" /> Mala</label>
-      </div>
-      <button type="submit">Votar</button>
-    </form>
-  </div>
-</body>
-</html>
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" class="gla-mail-size-container" style="border-collapse: collapse; max-width: 600px !important; margin: auto;">
+   <tbody>
+     <tr>
+       <td>
+         <table border="0" cellpadding="0" cellspacing="0" width="100%">
+           <tbody>
+             <tr>
+               <td align="center" valign="top">
+                 <img src="https://componentesui.blob.core.windows.net/recursos/iconografia-gla/estados-de-envio/relleno/png/entregado-sucursal-verde.png" style="margin: auto; display: inline-block !important; border: 0;width:80px;height: auto;" alt="Icono Entregado">
+               </td>
+             </tr>
+             <tr>
+               <td valign="top" align="center">
+                 <h1 style="font-family: Helvetica, Arial, sans-serif; color: #616161; font-size: 18px; font-weight: bold; line-height: 26px; text-align: center; margin: 0; padding: 0;">¡Envío entregado!</h1>
+                 <p style="font-family: Helvetica, Arial, sans-serif; color: #757575; font-size: 16px; line-height: 26px; text-align: center; margin: 0; padding: 0;"><em>N° de envío: /*NumeroDeEnvio*/</em></p>
+               </td>
+             </tr>
+           </tbody>
+         </table>
+       </td>
+     </tr>
+ 
+     <tr>
+       <td style="padding-top: 38px;">
+         <table width="100%" cellspacing="0" cellpadding="0" border="0">
+           <tbody>
+             <tr>
+               <td align="left" style="padding-bottom:15px;">
+                 <h2 style="font-family: Helvetica, Arial, sans-serif; color: #d71920; font-size: 23px; font-weight: bold; line-height: 27px; margin: 0; padding: 0;">Hola /*DestinatarioNombreSolo*/,</h2>
+               </td>
+             </tr>
+             <tr>
+               <td align="left" style="font-family: Helvetica, Arial, sans-serif; color: #616161; font-size: 16px; line-height: 26px; padding-bottom: 15px;">
+                 <p>Ya entregamos tu envío de <b>/*NombreFantasia*/</b> en nuestra <b>sucursal /*SucursalDescripcion*/</b> (/*SucursalDireccion*/), a las /*HoraEvento*/. Agradecemos tu colaboración en la entrega.</p>
+               </td>
+             </tr>
+           </tbody>
+         </table>
+       </td>
+     </tr>
+ 
+     <tr>
+       <td align="center" style="text-align: center; padding-bottom: 30px;">
+         <p style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; color: #616161; margin-bottom: 20px;">¿Cómo fue tu experiencia al retirar el envío?</p>
+         <table cellspacing="0" cellpadding="0" border="0" align="center" style="margin: auto;">
+           <tr>
+             <td align="center" style="padding: 0 10px;">
+               <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=positivo&envio=/*NumeroDeEnvio*/" style="font-family: Helvetica, Arial, sans-serif; text-decoration: none; background-color: #4CAF50; color: white; padding: 12px 20px; border-radius: 24px; display: inline-block; font-size: 15px;">
+                 Estoy conforme
+               </a>
+             </td>
+             <td align="center" style="padding: 0 10px;">
+               <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=negativo&envio=/*NumeroDeEnvio*/" style="font-family: Helvetica, Arial, sans-serif; text-decoration: none; background-color: #F44336; color: white; padding: 12px 20px; border-radius: 24px; display: inline-block; font-size: 15px;">
+                 No estoy conforme
+               </a>
+             </td>
+           </tr>
+         </table>
+       </td>
+     </tr>
+ 
+     <tr>
+       <td align="center" style="padding-top:15px; padding-bottom: 40px;">
+         <a href="https://www.andreani.com/envio/*NumeroDeEnvio*/?utm_source=email-notificaciones&utm_medium=email&utm_campaign=clickdesdemailnotificaciones&utm_content=seguir_envio_entregado_sucursal" target="_blank" style="text-decoration: none;">
+           <table style="background-color: #d71920; max-width: 200px; margin: auto; border-radius: 24px;" cellpadding="0" cellspacing="0" border="0">
+             <tr>
+               <td align="center" valign="middle" style="font-family: Helvetica, Arial, sans-serif; color: white; font-size: 15px; height: 48px;">
+                 Ver mi envío
+               </td>
+             </tr>
+           </table>
+         </a>
+         <p style="font-family: Helvetica, Arial, sans-serif; color: #9e9e9e; font-size: 13px; line-height: 20px; text-align: center; padding-top: 10px;">
+           Administrá todos tus envíos desde <a style="color: #d71920; text-decoration: none;" href="https://www.andreani.com/#!/personas?utm_source=email-notificaciones&utm_medium=email&utm_campaign=clickdesdemailnotificaciones&utm_content=administrar_envios_entregado_sucursal" target="_blank">andreani.com</a>
+         </p>
+       </td>
+     </tr>
+ 
+     <tr>
+       <td style="line-height: 26px; padding: 0px 0px 15px;">
+         <div style="font-family: Helvetica, Arial, sans-serif; font-size: 14px; text-align: center; color:#636363">
+           <p style="text-align: left;"><span>{{NPS - Entrega en Sucursal / Punto HOP}}</span></p>
+           <p><span>{{Serv. Viaje sin equipaje}}</span></p>
+           <p><span>{{Novedades Covid-19}}</span></p>
+         </div>
+       </td>
+     </tr>
+   </tbody>
+ </table>
+ 
