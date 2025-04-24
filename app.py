@@ -1,6 +1,7 @@
 from flask import Flask, request, redirect, render_template, Response
 import psycopg2
 import os
+import csv
 from datetime import datetime
 
 app = Flask(__name__)
@@ -21,7 +22,6 @@ def crear_tabla():
     cur.close()
     conn.close()
 
-# Llamar la función para crear la tabla al iniciar
 crear_tabla()
 
 @app.route("/")
@@ -36,7 +36,6 @@ def voto():
 
     if sucursal and respuesta:
         try:
-            # Conectar a la base de datos PostgreSQL
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta) VALUES (%s, %s, %s)", (timestamp, sucursal, respuesta))
@@ -56,26 +55,33 @@ def gracias():
 @app.route("/descargar")
 def descargar():
     try:
-        # Conectar a la base de datos PostgreSQL
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
-        cur.execute("SELECT timestamp, sucursal, respuesta FROM votos")
+        cur.execute("SELECT * FROM votos")
         rows = cur.fetchall()
-        cur.close()
         conn.close()
 
-        # Convertir los resultados a formato CSV
-        csv_data = "timestamp,sucursal,respuesta\n"
-        csv_data += "\n".join([",".join(map(str, row)) for row in rows])
+        # Crear el archivo CSV en memoria
+        output = []
+        output.append(['id', 'timestamp', 'sucursal', 'respuesta'])  # Encabezado
+        for row in rows:
+            output.append([row[0], row[1], row[2], row[3]])
 
-        # Devolver el archivo CSV como respuesta
+        # Convertir a CSV
+        import io
+        csv_output = io.StringIO()
+        csv_writer = csv.writer(csv_output)
+        csv_writer.writerows(output)
+        csv_output.seek(0)
+
         return Response(
-            csv_data,
+            csv_output.getvalue(),
             mimetype="text/csv",
             headers={"Content-Disposition": "attachment; filename=resultados.csv"}
         )
+
     except Exception as e:
-        return f"Error al obtener los datos: {e}", 500
+        return f"Error al acceder a los datos: {e}", 500
 
 if __name__ == "__main__":
     app.run(debug=True)
