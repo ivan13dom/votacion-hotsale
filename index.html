@@ -2,82 +2,62 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Notificación de Envío</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Encuesta Hot Sale</title>
   <style>
     body {
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       margin: 0;
-      padding: 0;
-      background-color: #f9f9f9;
     }
     .container {
-      max-width: 600px;
-      margin: auto;
       background: white;
-      padding: 20px;
-    }
-    .center {
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
-    .button {
-      text-decoration: none;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 24px;
-      display: inline-block;
-      font-size: 15px;
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
     }
-    .btn-positive {
-      background-color: #4CAF50;
+    .opciones {
+      margin: 1rem 0;
     }
-    .btn-negative {
-      background-color: #F44336;
-    }
-    .btn-track {
-      background-color: #d71920;
-      max-width: 200px;
+    label {
       display: block;
-      margin: 20px auto;
-      text-align: center;
+      margin: 0.5rem 0;
     }
-    small a {
-      color: #d71920;
-      text-decoration: none;
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="center">
-      <img src="https://componentesui.blob.core.windows.net/recursos/iconografia-gla/estados-de-envio/relleno/png/entregado-sucursal-verde.png" alt="Entregado" width="80" />
-      <h1 style="color: #616161; font-size: 18px;">¡Envío entregado!</h1>
-      <p style="color: #757575; font-size: 16px;"><em>N° de envío: /*NumeroDeEnvio*/</em></p>
-    </div>
-
-    <h2 style="color: #d71920; font-size: 23px;">Hola /*DestinatarioNombreSolo*/</h2>
-    <p style="color: #616161; font-size: 16px;">
-      Ya entregamos tu envío de <b>/*NombreFantasia*/</b> en nuestra <b>sucursal /*SucursalDescripcion*/</b> (/*SucursalDireccion*/), a las /*HoraEvento*/.
-      Agradecemos tu colaboración en la entrega.
-    </p>
-
-    <div class="center">
-      <p style="color: #616161; font-size: 16px;">¿Cómo fue tu experiencia al retirar el envío?</p>
-      <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=positivo&envio=/*NumeroDeEnvio*/" class="button btn-positive">Estoy conforme</a>
-      <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&respuesta=negativo&envio=/*NumeroDeEnvio*/" class="button btn-negative" style="margin-left: 10px;">No estoy conforme</a>
-    </div>
-
-    <a href="https://www.andreani.com/envio/*NumeroDeEnvio*/" class="button btn-track">Ver mi envío</a>
-
-    <div class="center">
-      <small>Administrá todos tus envíos desde <a href="https://www.andreani.com/#!/personas">andreani.com</a></small>
-    </div>
-
-    <div style="color:#636363; font-size: 14px; text-align: left; margin-top: 20px;">
-      <p><span>{{NPS - Entrega en Sucursal / Punto HOP}}</span></p>
-      <p><span>{{Serv. Viaje sin equipaje}}</span></p>
-      <p><span>{{Novedades Covid-19}}</span></p>
-    </div>
+    <h1>¿Cómo fue tu experiencia?</h1>
+    <form>
+      <div class="opciones">
+        <label><input type="radio" name="experiencia" value="excelente" /> Excelente</label>
+        <label><input type="radio" name="experiencia" value="buena" /> Buena</label>
+        <label><input type="radio" name="experiencia" value="regular" /> Regular</label>
+        <label><input type="radio" name="experiencia" value="mala" /> Mala</label>
+      </div>
+      <button type="submit">Votar</button>
+    </form>
   </div>
 </body>
 </html>
