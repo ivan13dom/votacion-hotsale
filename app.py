@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, Response
 import psycopg2
 import os
 from datetime import datetime
@@ -21,6 +21,7 @@ def crear_tabla():
     cur.close()
     conn.close()
 
+# Llamar la función para crear la tabla al iniciar
 crear_tabla()
 
 @app.route("/")
@@ -35,6 +36,7 @@ def voto():
 
     if sucursal and respuesta:
         try:
+            # Conectar a la base de datos PostgreSQL
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta) VALUES (%s, %s, %s)", (timestamp, sucursal, respuesta))
@@ -50,18 +52,30 @@ def voto():
 @app.route("/gracias")
 def gracias():
     return render_template("gracias.html")
-from flask import Response
 
 @app.route("/descargar")
 def descargar():
-    if not os.path.exists(CSV_FILE):
-        return "No hay datos todavía", 404
+    try:
+        # Conectar a la base de datos PostgreSQL
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("SELECT timestamp, sucursal, respuesta FROM votos")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    with open(CSV_FILE, encoding='utf-8') as f:
-        csv_data = f.read()
+        # Convertir los resultados a formato CSV
+        csv_data = "timestamp,sucursal,respuesta\n"
+        csv_data += "\n".join([",".join(map(str, row)) for row in rows])
 
-    return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=resultados.csv"}
-    )
+        # Devolver el archivo CSV como respuesta
+        return Response(
+            csv_data,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=resultados.csv"}
+        )
+    except Exception as e:
+        return f"Error al obtener los datos: {e}", 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
