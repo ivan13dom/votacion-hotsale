@@ -15,7 +15,8 @@ def crear_tabla():
             id SERIAL PRIMARY KEY,
             timestamp TIMESTAMP,
             sucursal TEXT,
-            respuesta TEXT
+            respuesta TEXT,
+            ip TEXT
         )
     ''')
     conn.commit()
@@ -32,13 +33,47 @@ def home():
 def voto():
     sucursal = request.args.get("sucursal")
     respuesta = request.args.get("respuesta")
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip:
+        ip = ip.split(',')[0].strip()  # Asegura que tomamos solo la IP real
     timestamp = datetime.now()
 
     if sucursal and respuesta:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta) VALUES (%s, %s, %s)", (timestamp, sucursal, respuesta))
+
+            # 🔍 Consulta: cuántos votos ya hizo esta IP
+            cur.execute("SELECT COUNT(*) FROM votos WHERE ip = %s", (ip,))
+            cantidad_votos = cur.fetchone()[0]
+
+            # ⛔ Límite alcanzado
+            if cantidad_votos >= 3:
+                cur.close()
+                conn.close()
+                return "Límite de votos alcanzado para esta IP", 403
+
+            # ✅ Guardar el nuevo voto
+            cur.execute(
+                "INSERT INTO votos (timestamp, sucursal, respuesta, ip) VALUES (%s, %s, %s, %s)",
+                (timestamp, sucursal, respuesta, ip)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            return redirect("/gracias")
+
+        except Exception as e:
+            return f"Error al guardar en la base de datos: {e}", 500
+    else:
+        return "Datos incompletos", 400
+
+    if sucursal and respuesta:
+        try:
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, ip) VALUES (%s, %s, %s, %s)", 
+                        (timestamp, sucursal, respuesta, ip))
             conn.commit()
             cur.close()
             conn.close()
@@ -63,9 +98,9 @@ def descargar():
 
         # Crear el archivo CSV en memoria
         output = []
-        output.append(['id', 'timestamp', 'sucursal', 'respuesta'])  # Encabezado
+        output.append(['id', 'timestamp', 'sucursal', 'respuesta', 'ip'])  # Encabezado con IP
         for row in rows:
-            output.append([row[0], row[1], row[2], row[3]])
+            output.append([row[0], row[1], row[2], row[3], row[4]])
 
         # Convertir a CSV
         import io
