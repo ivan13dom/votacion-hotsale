@@ -51,7 +51,7 @@ def voto():
             if cantidad_votos >= 3:
                 cur.close()
                 conn.close()
-                return "Límite de votos alcanzado para esta IP", 403
+                return "Límite de votos alcanzado para este usuario", 403
 
             # ✅ Guardar el nuevo voto
             cur.execute(
