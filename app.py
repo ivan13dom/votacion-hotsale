@@ -48,10 +48,10 @@ def voto():
             cantidad_votos = cur.fetchone()[0]
 
             # ⛔ Límite alcanzado
-            if cantidad_votos >= 3:
-                cur.close()
-                conn.close()
-                return "Límite de votos alcanzado para este usuario", 403
+           # if cantidad_votos >= 3:
+            #    cur.close()
+             #   conn.close()
+              #  return "Límite de votos alcanzado para este usuario", 403
 
             # ✅ Guardar el nuevo voto
             cur.execute(
