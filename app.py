@@ -4,11 +4,10 @@ import os
 import csv
 from datetime import datetime
 from urllib.parse import parse_qs
-import pytz  # Para zona horaria
+from zoneinfo import ZoneInfo  # estándar desde Python 3.9
 
 app = Flask(__name__)
 
-# Crear la tabla si no existe al iniciar
 def crear_tabla():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
@@ -49,9 +48,8 @@ def voto():
     if ip:
         ip = ip.split(',')[0].strip()
 
-    # Obtener fecha y hora local de Argentina
-    argentina_tz = pytz.timezone("America/Argentina/Buenos_Aires")
-    timestamp = datetime.now(argentina_tz)
+    # Zona horaria Argentina
+    timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
 
     if sucursal and respuesta and envio:
         try:
@@ -83,15 +81,10 @@ def descargar():
         rows = cur.fetchall()
         conn.close()
 
-        output = []
-        output.append(['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip'])
+        output = [['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip']]
         for row in rows:
             timestamp = row[1]
-            if timestamp:
-                # Formatear fecha a DD/MM/YYYY HH:MM:SS
-                formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
-            else:
-                formatted_timestamp = ""
+            formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S") if timestamp else ""
             output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5]])
 
         import io
