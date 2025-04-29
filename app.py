@@ -88,3 +88,20 @@ def descargar():
             output.append([row[0], row[1], row[2], row[3], row[4], row[5]])
 
         import io
+        csv_output = io.StringIO()
+        csv_writer = csv.writer(csv_output)
+        csv_writer.writerows(output)
+        csv_output.seek(0)
+
+        return Response(
+            csv_output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=resultados.csv"}
+        )
+
+    except Exception as e:
+        return f"Error al acceder a los datos: {e}", 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
