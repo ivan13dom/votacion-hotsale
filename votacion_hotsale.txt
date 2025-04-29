@@ -1,0 +1,24 @@
+ <tr>
+          <td valign="middle" align="center" style="text-align: center; padding-bottom: 30px;">
+             <p style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; color: #616161; margin-bottom: 20px;">
+               Este Hot Sale, premiamos a la sucursal Andreani que brinde la mejor experiencia. ¡Vos decidís!
+            </p>
+            <p style="font-family: Helvetica, Arial, sans-serif; font-size: 16px; color: #616161; margin-bottom: 20px;">
+               ¿Querés darle tu voto a sucursal /*SucursalDescripcion*/? 
+             </p>
+             <table cellspacing="0" cellpadding="0" border="0" align="center" style="margin: auto;">
+               <tbody><tr>
+                 <td align="center" style="padding: 0 10px;">
+                   <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&amp;respuesta=positivo&amp;envio=/*NumeroDeEnvio*/" style="font-family: Helvetica, Arial, sans-serif; text-decoration: none; background-color: #4CAF50; color: white; padding: 12px 20px; border-radius: 24px; display: inline-block; font-size: 15px;">
+                     ¡Sí, dale!
+                   </a>
+                 </td>
+                 <td align="center" style="padding: 0 10px;">
+                   <a href="https://votacion-hotsale.onrender.com/voto?sucursal=/*SucursalDescripcion*/&amp;respuesta=negativo&amp;envio=/*NumeroDeEnvio*/" style="font-family: Helvetica, Arial, sans-serif; text-decoration: none; background-color: #F44336; color: white; padding: 12px 20px; border-radius: 24px; display: inline-block; font-size: 15px;">
+                     No, gracias
+                   </a>
+                 </td>
+               </tr>
+             </tbody></table>
+          </td>
+       </tr>

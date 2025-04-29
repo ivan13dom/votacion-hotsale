@@ -3,6 +3,7 @@ import psycopg2
 import os
 import csv
 from datetime import datetime
+import io
 
 app = Flask(__name__)
 
@@ -16,6 +17,7 @@ def crear_tabla():
             timestamp TIMESTAMP,
             sucursal TEXT,
             respuesta TEXT,
+            envio TEXT,
             ip TEXT
         )
     ''')
@@ -33,55 +35,31 @@ def home():
 def voto():
     sucursal = request.args.get("sucursal")
     respuesta = request.args.get("respuesta")
+    envio = request.args.get("envio")
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
-        ip = ip.split(',')[0].strip()  # Asegura que tomamos solo la IP real
+        ip = ip.split(',')[0].strip()
     timestamp = datetime.now()
 
-    if sucursal and respuesta:
-        try:
-            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
-
-            # 🔍 Consulta: cuántos votos ya hizo esta IP
-            cur.execute("SELECT COUNT(*) FROM votos WHERE ip = %s", (ip,))
-            cantidad_votos = cur.fetchone()[0]
-
-            # ⛔ Límite alcanzado
-           # if cantidad_votos >= 3:
-            #    cur.close()
-             #   conn.close()
-              #  return "Límite de votos alcanzado para este usuario", 403
-
-            # ✅ Guardar el nuevo voto
-            cur.execute(
-                "INSERT INTO votos (timestamp, sucursal, respuesta, ip) VALUES (%s, %s, %s, %s)",
-                (timestamp, sucursal, respuesta, ip)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-            return redirect("/gracias")
-
-        except Exception as e:
-            return f"Error al guardar en la base de datos: {e}", 500
-    else:
+    if not (sucursal and respuesta and envio):
         return "Datos incompletos", 400
 
-    if sucursal and respuesta:
-        try:
-            conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
-            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, ip) VALUES (%s, %s, %s, %s)", 
-                        (timestamp, sucursal, respuesta, ip))
-            conn.commit()
-            cur.close()
-            conn.close()
-            return redirect("/gracias")
-        except Exception as e:
-            return f"Error al guardar en la base de datos: {e}", 500
-    else:
-        return "Datos incompletos", 400
+    try:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+
+        # Guardar el voto
+        cur.execute(
+            "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
+            (timestamp, sucursal, respuesta, envio, ip)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect("/gracias")
+
+    except Exception as e:
+        return f"Error al guardar en la base de datos: {e}", 500
 
 @app.route("/gracias")
 def gracias():
@@ -94,23 +72,18 @@ def descargar():
         cur = conn.cursor()
         cur.execute("SELECT * FROM votos")
         rows = cur.fetchall()
+        cur.close()
         conn.close()
 
-        # Crear el archivo CSV en memoria
-        output = []
-        output.append(['id', 'timestamp', 'sucursal', 'respuesta', 'ip'])  # Encabezado con IP
-        for row in rows:
-            output.append([row[0], row[1], row[2], row[3], row[4]])
-
-        # Convertir a CSV
-        import io
-        csv_output = io.StringIO()
-        csv_writer = csv.writer(csv_output)
-        csv_writer.writerows(output)
-        csv_output.seek(0)
+        # Crear archivo CSV en memoria
+        output = io.StringIO()
+        csv_writer = csv.writer(output)
+        csv_writer.writerow(['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip'])
+        csv_writer.writerows(rows)
+        output.seek(0)
 
         return Response(
-            csv_output.getvalue(),
+            output.getvalue(),
             mimetype="text/csv",
             headers={"Content-Disposition": "attachment; filename=resultados.csv"}
         )
@@ -119,6 +92,5 @@ def descargar():
         return f"Error al acceder a los datos: {e}", 500
 
 if __name__ == "__main__":
-    # Usar el puerto que Render asigna, por defecto 10000
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
