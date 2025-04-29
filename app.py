@@ -4,6 +4,7 @@ import os
 import csv
 from datetime import datetime
 from urllib.parse import parse_qs
+import pytz  # Para zona horaria
 
 app = Flask(__name__)
 
@@ -33,7 +34,6 @@ def home():
 
 @app.route("/voto")
 def voto():
-    # Manejar casos donde los parámetros llegan separados con punto y coma (;)
     raw_query = request.query_string.decode()
     if ";" in raw_query and "&" not in raw_query:
         params = parse_qs(raw_query.replace(";", "&"))
@@ -48,14 +48,15 @@ def voto():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
         ip = ip.split(',')[0].strip()
-    timestamp = datetime.now()
+
+    # Obtener fecha y hora local de Argentina
+    argentina_tz = pytz.timezone("America/Argentina/Buenos_Aires")
+    timestamp = datetime.now(argentina_tz)
 
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-
-            # Insertar nuevo voto
             cur.execute(
                 "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
                 (timestamp, sucursal, respuesta, envio, ip)
@@ -83,9 +84,15 @@ def descargar():
         conn.close()
 
         output = []
-        output.append(['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip'])  # Encabezado
+        output.append(['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip'])
         for row in rows:
-            output.append([row[0], row[1], row[2], row[3], row[4], row[5]])
+            timestamp = row[1]
+            if timestamp:
+                # Formatear fecha a DD/MM/YYYY HH:MM:SS
+                formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
+            else:
+                formatted_timestamp = ""
+            output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5]])
 
         import io
         csv_output = io.StringIO()
