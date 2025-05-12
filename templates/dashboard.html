@@ -26,7 +26,7 @@
     <h2>Top 5 sucursales con mejor % de votos positivos (mín. 5 votos)</h2>
     <table>
         <tr><th>Sucursal</th><th>% Positivos</th><th>Positivos</th><th>Total votos</th></tr>
-        {% for sucursal, porcentaje, positivos, total in top_5 %}
+        {% for sucursal, porcentaje, positivos, total in top_porcentaje %}
             <tr>
                 <td>{{ sucursal }}</td>
                 <td>{{ porcentaje }}%</td>
