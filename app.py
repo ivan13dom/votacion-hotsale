@@ -4,7 +4,8 @@ import os
 import csv
 from datetime import datetime
 from urllib.parse import parse_qs
-from zoneinfo import ZoneInfo  # estándar desde Python 3.9
+from zoneinfo import ZoneInfo
+from collections import Counter, defaultdict
 
 app = Flask(__name__)
 
@@ -21,6 +22,11 @@ def crear_tabla():
             ip TEXT
         )
     ''')
+    # Índice para que cada número de envío solo vote una vez (no borramos duplicados anteriores)
+    try:
+        cur.execute('CREATE UNIQUE INDEX unique_envio_idx ON votos (envio)')
+    except psycopg2.errors.DuplicateObject:
+        pass
     conn.commit()
     cur.close()
     conn.close()
@@ -48,17 +54,14 @@ def voto():
     if ip:
         ip = ip.split(',')[0].strip()
 
-    # Zona horaria Argentina
     timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
 
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
-                (timestamp, sucursal, respuesta, envio, ip)
-            )
+            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (envio) DO NOTHING", 
+                        (timestamp, sucursal, respuesta, envio, ip))
             conn.commit()
             cur.close()
             conn.close()
@@ -71,6 +74,45 @@ def voto():
 @app.route("/gracias")
 def gracias():
     return render_template("gracias.html")
+
+@app.route("/dashboard")
+def dashboard():
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    cur = conn.cursor()
+    cur.execute("SELECT sucursal, respuesta, envio, timestamp FROM votos")
+    votos = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    votos_unicos = {}
+    for sucursal, respuesta, envio, timestamp in votos:
+        if envio not in votos_unicos:
+            votos_unicos[envio] = (sucursal, respuesta, timestamp)
+
+    positivos_por_sucursal = Counter()
+    totales_por_sucursal = Counter()
+    votos_por_dia = defaultdict(int)
+
+    for sucursal, respuesta, timestamp in votos_unicos.values():
+        totales_por_sucursal[sucursal] += 1
+        if respuesta.lower() in ["si", "sí"]:
+            positivos_por_sucursal[sucursal] += 1
+        fecha = timestamp.date()
+        votos_por_dia[fecha] += 1
+
+    top_10 = positivos_por_sucursal.most_common(10)
+
+    porcentajes = []
+    for sucursal in totales_por_sucursal:
+        total = totales_por_sucursal[sucursal]
+        positivos = positivos_por_sucursal[sucursal]
+        porcentaje = round((positivos / total) * 100, 2)
+        porcentajes.append((sucursal, porcentaje))
+    top_5_porcentaje = sorted(porcentajes, key=lambda x: x[1], reverse=True)[:5]
+
+    votos_dia = sorted(votos_por_dia.items())
+
+    return render_template("dashboard.html", top_10=top_10, top_5=top_5_porcentaje, votos_dia=votos_dia)
 
 @app.route("/descargar")
 def descargar():

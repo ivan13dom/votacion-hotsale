@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Votación</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+        h1, h2 { color: #333; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+        th { background: #eee; }
+        canvas { max-width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard de Votación</h1>
+
+    <h2>Top 10 sucursales con más votos positivos</h2>
+    <table>
+        <tr><th>Sucursal</th><th>Votos positivos</th></tr>
+        {% for sucursal, cantidad in top_positivos %}
+            <tr><td>{{ sucursal }}</td><td>{{ cantidad }}</td></tr>
+        {% endfor %}
+    </table>
+
+    <h2>Top 5 sucursales con mejor % de votos positivos (mín. 5 votos)</h2>
+    <table>
+        <tr><th>Sucursal</th><th>% Positivos</th><th>Positivos</th><th>Total votos</th></tr>
+        {% for sucursal, porcentaje, positivos, total in top_porcentaje %}
+            <tr>
+                <td>{{ sucursal }}</td>
+                <td>{{ porcentaje }}%</td>
+                <td>{{ positivos }}</td>
+                <td>{{ total }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Votos únicos por día</h2>
+    <canvas id="votosPorDia"></canvas>
+    <script>
+        const labels = {{ votos_dia | map(attribute=0) | map('strftime', '%d/%m') | list | tojson }};
+        const data = {{ votos_dia | map(attribute=1) | list | tojson }};
+    
+        const ctx = document.getElementById('votosPorDia').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Votos únicos',
+                    backgroundColor: '#4e73df',
+                    data: data
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+    
+
+    <h2>Últimos 100 votos únicos por envío</h2>
+    <table>
+        <tr><th>Fecha</th><th>Sucursal</th><th>Respuesta</th><th>Envío</th></tr>
+        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
+            <tr>
+                <td>{{ timestamp.strftime('%d/%m %H:%M') }}</td>
+                <td>{{ sucursal }}</td>
+                <td>{{ respuesta }}</td>
+                <td>{{ envio }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
