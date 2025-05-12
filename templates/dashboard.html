@@ -18,10 +18,13 @@
     <h2>Top 10 sucursales con más votos positivos</h2>
     <table>
         <tr><th>Sucursal</th><th>Votos positivos</th></tr>
-        {% for sucursal, cantidad in top_10 %}
+        {% for sucursal, cantidad in top_positivos %}
             <tr><td>{{ sucursal }}</td><td>{{ cantidad }}</td></tr>
+        {% else %}
+            <tr><td colspan="2">No hay datos disponibles.</td></tr>
         {% endfor %}
     </table>
+    
 
     <h2>Top 5 sucursales con mejor % de votos positivos (mín. 5 votos)</h2>
     <table>
@@ -33,8 +36,11 @@
                 <td>{{ positivos }}</td>
                 <td>{{ total }}</td>
             </tr>
+        {% else %}
+            <tr><td colspan="4">No hay datos disponibles.</td></tr>
         {% endfor %}
     </table>
+    
 
     <h2>Votos únicos por día</h2>
     <canvas id="votosPorDia"></canvas>
