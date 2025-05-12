@@ -61,11 +61,6 @@ def voto():
 def gracias():
     return render_template('gracias.html')
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-
-
 @app.route('/dashboard')
 def dashboard():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -78,3 +73,10 @@ def dashboard():
     conn.close()
 
     return render_template('dashboard.html', votos=votos)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
+
+
