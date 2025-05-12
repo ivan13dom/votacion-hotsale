@@ -5,6 +5,8 @@ import csv
 from datetime import datetime
 from urllib.parse import parse_qs
 from zoneinfo import ZoneInfo  # estándar desde Python 3.9
+from collections import Counter, defaultdict
+
 
 app = Flask(__name__)
 
