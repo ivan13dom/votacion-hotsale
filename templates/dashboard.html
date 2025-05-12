@@ -2,61 +2,125 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Dashboard de Encuestas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        h1, h2 {
+            margin-bottom: 1rem;
+        }
+
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+        }
+
+        table {
+            margin-bottom: 0;
+        }
+
+        .chart-container {
+            max-width: 100%;
+            margin-bottom: 2rem;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1 class="mb-4">Dashboard de Encuestas</h1>
 
-    <h1>Dashboard de Votaciones</h1>
+        <div class="mb-5">
+            <h2>Votos por día</h2>
+            <canvas id="votosChart" class="chart-container"></canvas>
+        </div>
 
-    <!-- Mostrar votos positivos por sucursal -->
-    <h2>Cantidad de votos positivos por sucursal</h2>
-    <table>
-        <tr><th>Sucursal</th><th>Votos positivos</th></tr>
-        {% for sucursal, cantidad in positivos_por_sucursal.items() %}
-            <tr><td>{{ sucursal }}</td><td>{{ cantidad }}</td></tr>
-        {% else %}
-            <tr><td colspan="2">No hay votos positivos registrados.</td></tr>
-        {% endfor %}
-    </table>
+        <div class="mb-5">
+            <h2>Votos positivos únicos por sucursal</h2>
+            <div class="table-wrapper">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Sucursal</th>
+                            <th>Votos Positivos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sucursal, votos in top_positivos %}
+                            <tr>
+                                <td>{{ sucursal }}</td>
+                                <td>{{ votos }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <!-- Gráfico de votos por día -->
-    <h2>Votos por día</h2>
-    <canvas id="votosPorDiaChart" width="400" height="200"></canvas>
+        <div class="mb-5">
+            <h2>Últimos 100 votos únicos</h2>
+            <div class="table-wrapper">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Número de Envío</th>
+                            <th>Fecha</th>
+                            <th>Sucursal</th>
+                            <th>Respuesta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
+                            <tr>
+                                <td>{{ envio }}</td>
+                                <td>{{ timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ sucursal }}</td>
+                                <td>{{ respuesta }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const labels = {{ labels | tojson }};
-        const data = {{ data | tojson }};
-        const ctx = document.getElementById('votosPorDiaChart').getContext('2d');
-        new Chart(ctx, {
+        const ctx = document.getElementById('votosChart').getContext('2d');
+        const votosChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: {{ labels | tojson }},
                 datasets: [{
-                    label: 'Votos por día',
-                    data: data,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false
+                    label: 'Cantidad de votos',
+                    data: {{ data | tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
                 }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
             }
         });
     </script>
-
-    <!-- Últimos 100 votos únicos por envío -->
-    <h2>Últimos 100 votos únicos por envío</h2>
-    <table>
-        <tr><th>Envío</th><th>Sucursal</th><th>Respuesta</th><th>Fecha</th></tr>
-        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
-            <tr>
-                <td>{{ envio }}</td>
-                <td>{{ sucursal }}</td>
-                <td>{{ respuesta }}</td>
-                <td>{{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-            </tr>
-        {% else %}
-            <tr><td colspan="4">No hay votos disponibles.</td></tr>
-        {% endfor %}
-    </table>
-
 </body>
 </html>
