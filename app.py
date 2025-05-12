@@ -136,12 +136,16 @@ def dashboard():
     labels = [fecha.strftime("%Y-%m-%d") for fecha, _ in votos_dia]
     data = [cantidad for _, cantidad in votos_dia]
 
+   # Ordenar por cantidad de votos positivos (de mayor a menor)
+    top_positivos = sorted(positivos_por_sucursal.items(), key=lambda x: x[1], reverse=True)
+
     return render_template("dashboard.html",
-                           positivos_por_sucursal=positivos_por_sucursal,
-                           votos_dia=votos_dia,
-                           ultimos_votos=ultimos_votos,
-                           labels=labels,
-                           data=data)
+                       top_positivos=top_positivos,
+                       votos_dia=votos_dia,
+                       ultimos_votos=ultimos_votos,
+                       labels=labels,
+                       data=data)
+
 
 
 if __name__ == "__main__":
