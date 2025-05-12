@@ -9,6 +9,7 @@ from collections import Counter, defaultdict
 
 app = Flask(__name__)
 
+# Función para crear la tabla en la base de datos
 def crear_tabla():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
@@ -33,10 +34,12 @@ def crear_tabla():
 
 crear_tabla()
 
+# Ruta principal
 @app.route("/")
 def home():
     return "Servidor activo"
 
+# Ruta para registrar el voto
 @app.route("/voto")
 def voto():
     raw_query = request.query_string.decode()
@@ -60,7 +63,17 @@ def voto():
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (envio) DO NOTHING", 
+
+            # Comprobar si ya existe un voto con el mismo 'envio'
+            cur.execute("SELECT id FROM votos WHERE envio = %s", (envio,))
+            existing_vote = cur.fetchone()
+
+            if existing_vote:
+                # Si ya existe un voto con ese 'envio', redirigir a la página de "Ya votó"
+                return redirect("/ya_voto")
+            
+            # Si no existe el 'envio', se realiza el insert
+            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)", 
                         (timestamp, sucursal, respuesta, envio, ip))
             conn.commit()
             cur.close()
@@ -71,10 +84,12 @@ def voto():
     else:
         return "Datos incompletos", 400
 
+# Ruta de agradecimiento tras votar
 @app.route("/gracias")
 def gracias():
     return render_template("gracias.html")
 
+# Ruta para el dashboard con los resultados
 @app.route("/dashboard")
 def dashboard():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
@@ -114,6 +129,7 @@ def dashboard():
 
     return render_template("dashboard.html", top_10=top_10, top_5=top_5_porcentaje, votos_dia=votos_dia)
 
+# Ruta para descargar los resultados en CSV
 @app.route("/descargar")
 def descargar():
     try:
@@ -144,6 +160,12 @@ def descargar():
     except Exception as e:
         return f"Error al acceder a los datos: {e}", 500
 
+# Ruta para mostrar la página si el voto ya fue registrado
+@app.route("/ya_voto")
+def ya_voto():
+    return render_template("ya_voto.html")
+
+# Iniciar la aplicación Flask
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
