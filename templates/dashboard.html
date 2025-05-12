@@ -18,7 +18,7 @@
     <h2>Top 10 sucursales con más votos positivos</h2>
     <table>
         <tr><th>Sucursal</th><th>Votos positivos</th></tr>
-        {% for sucursal, cantidad in top_positivos %}
+        {% for sucursal, cantidad in top_10 %}
             <tr><td>{{ sucursal }}</td><td>{{ cantidad }}</td></tr>
         {% endfor %}
     </table>
@@ -26,7 +26,7 @@
     <h2>Top 5 sucursales con mejor % de votos positivos (mín. 5 votos)</h2>
     <table>
         <tr><th>Sucursal</th><th>% Positivos</th><th>Positivos</th><th>Total votos</th></tr>
-        {% for sucursal, porcentaje, positivos, total in top_porcentaje %}
+        {% for sucursal, porcentaje, positivos, total in top_5 %}
             <tr>
                 <td>{{ sucursal }}</td>
                 <td>{{ porcentaje }}%</td>
@@ -39,8 +39,8 @@
     <h2>Votos únicos por día</h2>
     <canvas id="votosPorDia"></canvas>
     <script>
-        const labels = {{ votos_dia | map(attribute=0) | map('strftime', '%d/%m') | list | tojson }};
-        const data = {{ votos_dia | map(attribute=1) | list | tojson }};
+        const labels = {{ labels | tojson }};
+        const data = {{ data | tojson }};
     
         const ctx = document.getElementById('votosPorDia').getContext('2d');
         const chart = new Chart(ctx, {
@@ -61,14 +61,13 @@
             }
         });
     </script>
-    
 
     <h2>Últimos 100 votos únicos por envío</h2>
     <table>
         <tr><th>Fecha</th><th>Sucursal</th><th>Respuesta</th><th>Envío</th></tr>
-        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
+        {% for envio, fecha_str, sucursal, respuesta in ultimos_votos %}
             <tr>
-                <td>{{ timestamp.strftime('%d/%m %H:%M') }}</td>
+                <td>{{ fecha_str }}</td>
                 <td>{{ sucursal }}</td>
                 <td>{{ respuesta }}</td>
                 <td>{{ envio }}</td>
