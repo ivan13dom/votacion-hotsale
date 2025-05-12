@@ -137,7 +137,14 @@ def dashboard():
         positivos = positivos_por_sucursal[sucursal]
         porcentaje = round((positivos / total) * 100, 2)
         porcentajes.append((sucursal, porcentaje))
-    top_5_porcentaje = sorted(porcentajes, key=lambda x: x[1], reverse=True)[:5]
+    top_5_porcentaje = [
+    (sucursal, porcentaje, positivos, total)
+    for sucursal, (positivos, total, porcentaje) in porcentaje_positivos.items()
+    if total >= 5
+    ]
+    top_5_porcentaje.sort(key=lambda x: x[1], reverse=True)
+    top_5_porcentaje = top_5_porcentaje[:5]
+
 
     # ✅ Convertir fechas y cantidades para el gráfico en JS
     votos_dia_ordenado = sorted(votos_por_dia.items())
