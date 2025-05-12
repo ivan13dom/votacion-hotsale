@@ -1,84 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Dashboard Votación</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial; background: #f5f5f5; padding: 20px; }
-        h1, h2 { color: #333; }
-        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
-        th { background: #eee; }
-        canvas { max-width: 100%; margin-top: 20px; }
-    </style>
 </head>
 <body>
-    <h1>Dashboard de Votación</h1>
 
-    <h2>Top 10 sucursales con más votos positivos</h2>
+    <h1>Dashboard de Votaciones</h1>
+
+    <!-- Mostrar votos positivos por sucursal -->
+    <h2>Cantidad de votos positivos por sucursal</h2>
     <table>
         <tr><th>Sucursal</th><th>Votos positivos</th></tr>
-        {% for sucursal, cantidad in top_positivos %}
+        {% for sucursal, cantidad in positivos_por_sucursal.items() %}
             <tr><td>{{ sucursal }}</td><td>{{ cantidad }}</td></tr>
         {% else %}
-            <tr><td colspan="2">No hay datos disponibles.</td></tr>
+            <tr><td colspan="2">No hay votos positivos registrados.</td></tr>
         {% endfor %}
     </table>
-    
 
-    <h2>Top 5 sucursales con mejor % de votos positivos (mín. 5 votos)</h2>
-    <table>
-        <tr><th>Sucursal</th><th>% Positivos</th><th>Positivos</th><th>Total votos</th></tr>
-        {% for sucursal, porcentaje, positivos, total in top_porcentaje %}
-            <tr>
-                <td>{{ sucursal }}</td>
-                <td>{{ porcentaje }}%</td>
-                <td>{{ positivos }}</td>
-                <td>{{ total }}</td>
-            </tr>
-        {% else %}
-            <tr><td colspan="4">No hay datos disponibles.</td></tr>
-        {% endfor %}
-    </table>
-    
-
-    <h2>Votos únicos por día</h2>
-    <canvas id="votosPorDia"></canvas>
+    <!-- Gráfico de votos por día -->
+    <h2>Votos por día</h2>
+    <canvas id="votosPorDiaChart" width="400" height="200"></canvas>
     <script>
         const labels = {{ labels | tojson }};
         const data = {{ data | tojson }};
-    
-        const ctx = document.getElementById('votosPorDia').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'bar',
+        const ctx = document.getElementById('votosPorDiaChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Votos únicos',
-                    backgroundColor: '#4e73df',
-                    data: data
+                    label: 'Votos por día',
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false
                 }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: true }
-                }
             }
         });
     </script>
 
+    <!-- Últimos 100 votos únicos por envío -->
     <h2>Últimos 100 votos únicos por envío</h2>
     <table>
-        <tr><th>Fecha</th><th>Sucursal</th><th>Respuesta</th><th>Envío</th></tr>
-        {% for envio, fecha_str, sucursal, respuesta in ultimos_votos %}
+        <tr><th>Envío</th><th>Sucursal</th><th>Respuesta</th><th>Fecha</th></tr>
+        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
             <tr>
-                <td>{{ fecha_str }}</td>
+                <td>{{ envio }}</td>
                 <td>{{ sucursal }}</td>
                 <td>{{ respuesta }}</td>
-                <td>{{ envio }}</td>
+                <td>{{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             </tr>
+        {% else %}
+            <tr><td colspan="4">No hay votos disponibles.</td></tr>
         {% endfor %}
     </table>
+
 </body>
 </html>

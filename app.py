@@ -119,45 +119,29 @@ def dashboard():
             votos_unicos[envio] = (sucursal, respuesta, timestamp)
 
     positivos_por_sucursal = Counter()
-    totales_por_sucursal = Counter()
     votos_por_dia = defaultdict(int)
     ultimos_votos = []
 
     for envio, (sucursal, respuesta, timestamp) in votos_unicos.items():
-        totales_por_sucursal[sucursal] += 1
         if respuesta.lower() in ["si", "sí"]:
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
         votos_por_dia[fecha] += 1
         ultimos_votos.append((envio, timestamp, sucursal, respuesta))
 
-    top_10 = positivos_por_sucursal.most_common(10)
-
-    porcentajes = []
-    for sucursal in totales_por_sucursal:
-        total = totales_por_sucursal[sucursal]
-        positivos = positivos_por_sucursal[sucursal]
-        if total >= 5:
-            porcentaje = round((positivos / total) * 100, 2)
-            porcentajes.append((sucursal, porcentaje, positivos, total))
-
-    top_5_porcentaje = sorted(porcentajes, key=lambda x: x[1], reverse=True)[:5]
     votos_dia = sorted(votos_por_dia.items())
     ultimos_votos = sorted(ultimos_votos, key=lambda x: x[1], reverse=True)[:100]
 
+    # Datos para el gráfico de votos por día
     labels = [fecha.strftime("%Y-%m-%d") for fecha, _ in votos_dia]
     data = [cantidad for _, cantidad in votos_dia]
 
-
-    return render_template(
-    "dashboard.html",
-    top_positivos=top_10,
-    top_porcentaje=top_5_porcentaje,
-    votos_dia=votos_dia,
-    ultimos_votos=ultimos_votos,
-    labels=labels,
-    data=data
-    )
+    return render_template("dashboard.html",
+                           positivos_por_sucursal=positivos_por_sucursal,
+                           votos_dia=votos_dia,
+                           ultimos_votos=ultimos_votos,
+                           labels=labels,
+                           data=data)
 
 
 if __name__ == "__main__":
