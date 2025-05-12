@@ -123,7 +123,7 @@ def dashboard():
     ultimos_votos = []
 
     for envio, (sucursal, respuesta, timestamp) in votos_unicos.items():
-        if respuesta.lower() in ["positivo", "positivo"]:
+        if respuesta.strip().lower() == "positivo":
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
         votos_por_dia[fecha] += 1
