@@ -24,12 +24,18 @@ def crear_tabla():
     cur.close()
     conn.close()
 
-@app.route('/voto')
+@app.route("/voto")
 def voto():
-    sucursal = request.args.get('sucursal')
-    respuesta = request.args.get('respuesta')
-    envio = request.args.get('envio')
-    ip = request.remote_addr
+    raw_query = request.query_string.decode()
+    if ";" in raw_query and "&" not in raw_query:
+        params = parse_qs(raw_query.replace(";", "&"))
+        sucursal = params.get("sucursal", [None])[0]
+        respuesta = params.get("respuesta", [None])[0]
+        envio = params.get("envio", [None])[0]
+    else:
+        sucursal = request.args.get("sucursal")
+        respuesta = request.args.get("respuesta")
+        envio = request.args.get("envio")
 
     # Validar parámetros requeridos
     if not sucursal or not respuesta or not envio:
