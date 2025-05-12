@@ -145,35 +145,18 @@ def dashboard():
     votos_dia = sorted(votos_por_dia.items())
     ultimos_votos = sorted(ultimos_votos, key=lambda x: x[1], reverse=True)[:100]
 
-    return render_template(
-        "dashboard.html",
-        top_positivos=top_10,
-        top_porcentaje=top_5_porcentaje,
-        votos_dia=votos_dia,
-        ultimos_votos=ultimos_votos
-    )
+    labels = [fecha.strftime("%Y-%m-%d") for fecha, _ in votos_dia]
+    data = [cantidad for _, cantidad in votos_dia]
 
-
-
-    # ✅ Convertir fechas y cantidades para el gráfico en JS
-    votos_dia_ordenado = sorted(votos_por_dia.items())
-    labels = [fecha.strftime("%d/%m") for fecha, _ in votos_dia_ordenado]
-    data = [cantidad for _, cantidad in votos_dia_ordenado]
-
-    # Últimos 100 votos únicos ordenados por timestamp descendente
-    ultimos_votos_raw = sorted(votos_unicos.items(), key=lambda x: x[1][2], reverse=True)[:100]
-    ultimos_votos = [
-    (envio, timestamp.strftime('%d/%m %H:%M'), sucursal, respuesta)
-    for envio, (sucursal, respuesta, timestamp) in ultimos_votos_raw
-    ]
 
     return render_template(
     "dashboard.html",
-    top_10=top_10,
-    top_5=top_5_porcentaje,
+    top_positivos=top_10,
+    top_porcentaje=top_5_porcentaje,
+    votos_dia=votos_dia,
+    ultimos_votos=ultimos_votos,
     labels=labels,
-    data=data,
-    ultimos_votos=ultimos_votos
+    data=data
     )
 
 
