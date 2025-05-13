@@ -52,35 +52,34 @@ def voto():
 
     timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
 
-    # 👇 Verifica si ya votó con ese envío desde esa IP
-    if ip and envio:
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        cur = conn.cursor()
-        cur.execute("SELECT 1 FROM votos WHERE ip = %s AND envio = %s", (ip, envio))
-        ya_voto = cur.fetchone()
-        cur.close()
-        conn.close()
-
-        if ya_voto:
-            return render_template("ya_voto.html")
-
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
+
+            # Verificar si ya hay un voto con la misma combinación de envío e IP
+            cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
+            voto_existente = cur.fetchone()
+
+            if voto_existente:
+                cur.close()
+                conn.close()
+                return render_template("ya_voto.html")
+
+            # Insertar el nuevo voto si no existía
             cur.execute(
-                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (envio) DO NOTHING",
+                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
                 (timestamp, sucursal, respuesta, envio, ip)
             )
             conn.commit()
             cur.close()
             conn.close()
             return redirect("/gracias")
+
         except Exception as e:
             return f"Error al guardar en la base de datos: {e}", 500
     else:
         return "Datos incompletos", 400
-
 
 @app.route("/gracias")
 def gracias():
