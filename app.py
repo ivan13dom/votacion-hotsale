@@ -50,15 +50,26 @@ def voto():
     if ip:
         ip = ip.split(',')[0].strip()
 
-    # Zona horaria Argentina
     timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+
+    # 👇 Verifica si ya votó con ese envío desde esa IP
+    if ip and envio:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM votos WHERE ip = %s AND envio = %s", (ip, envio))
+        ya_voto = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if ya_voto:
+            return render_template("ya_voto.html")
 
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
             cur.execute(
-                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
+                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (envio) DO NOTHING",
                 (timestamp, sucursal, respuesta, envio, ip)
             )
             conn.commit()
@@ -69,6 +80,7 @@ def voto():
             return f"Error al guardar en la base de datos: {e}", 500
     else:
         return "Datos incompletos", 400
+
 
 @app.route("/gracias")
 def gracias():
@@ -124,6 +136,7 @@ def dashboard():
 
     for envio, (sucursal, respuesta, timestamp) in votos_unicos.items():
         if respuesta.strip().lower() == "positivo":
+
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
         votos_por_dia[fecha] += 1
