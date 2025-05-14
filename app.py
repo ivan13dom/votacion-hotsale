@@ -43,14 +43,21 @@ BOTS_SOSPECHOSOS = [
     "googleimageproxy", "gmailimageproxy", "gmail", "outlook", "yahoo"
 ]
 
+import logging
+
+# Configurá el logger si no lo hiciste antes
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
 @app.route("/voto")
 def voto():
     user_agent = request.headers.get("User-Agent", "").lower()
-
-    # ⚠️ Si el User-Agent es sospechoso, ignorar la solicitud (no cuenta el voto)
-    if any(bot in user_agent for bot in BOTS_SOSPECHOSOS):
-        print(f"[IGNORADO] User-Agent sospechoso: {user_agent}")
-        return "", 204  # No Content
+    referer = request.headers.get("Referer", "N/A")
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip:
+        ip = ip.split(',')[0].strip()
+    
+    # Detectar bots
+    es_bot = any(bot in user_agent for bot in BOTS_SOSPECHOSOS)
 
     raw_query = request.query_string.decode()
     if ";" in raw_query and "&" not in raw_query:
@@ -62,6 +69,10 @@ def voto():
         sucursal = request.args.get("sucursal")
         respuesta = request.args.get("respuesta")
         envio = request.args.get("envio")
+
+    logging.info(f"[INTENTO] IP={ip} BOT={es_bot} UA='{user_agent}' Referer='{referer}' Envio='{envio}' Sucursal='{sucursal}' Respuesta='{respuesta}'")
+
+    # Restante lógica...
 
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
