@@ -107,7 +107,7 @@ def comentario():
     envio = request.form.get("envio")
     ip = request.form.get("ip")
 
-    if comentario and envio and ip:
+    if envio and ip:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
