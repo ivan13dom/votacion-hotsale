@@ -72,7 +72,6 @@ def voto():
 
     logging.info(f"[INTENTO] IP={ip} BOT={es_bot} UA='{user_agent}' Referer='{referer}' Envio='{envio}' Sucursal='{sucursal}' Respuesta='{respuesta}'")
 
-    # Restante lógica...
 
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
@@ -125,7 +124,18 @@ def descargar():
         output = [['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip']]
         for row in rows:
             timestamp = row[1]
-            formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S") if timestamp else ""
+            from datetime import datetime
+            if isinstance(timestamp, datetime):
+                formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
+            elif isinstance(timestamp, str):
+                try:
+                    parsed = datetime.fromisoformat(timestamp)
+                    formatted_timestamp = parsed.strftime("%d/%m/%Y %H:%M:%S")
+                except ValueError:
+                    formatted_timestamp = timestamp
+            else:
+                formatted_timestamp = ""
+
             output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5]])
 
         import io
@@ -142,6 +152,7 @@ def descargar():
 
     except Exception as e:
         return f"Error al acceder a los datos: {e}", 500
+
 
 @app.route("/dashboard")
 def dashboard():
