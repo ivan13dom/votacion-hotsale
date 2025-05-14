@@ -33,8 +33,25 @@ crear_tabla()
 def home():
     return "Servidor activo"
 
+
+# Lista de user agents típicos de bots o servicios de previsualización
+BOTS_SOSPECHOSOS = [
+    "bot", "crawler", "spider", "preview", "facebookexternalhit", "whatsapp",
+    "telegrambot", "slackbot", "twitterbot", "linkedinbot", "embedly",
+    "quora link preview", "pinterest", "discordbot", "vkshare", "skypeuripreview",
+    "nuzzel", "outlook", "microsoft office", "applemail", "thunderbird",
+    "googleimageproxy", "gmailimageproxy", "gmail", "outlook", "yahoo"
+]
+
 @app.route("/voto")
 def voto():
+    user_agent = request.headers.get("User-Agent", "").lower()
+
+    # ⚠️ Si el User-Agent es sospechoso, ignorar la solicitud (no cuenta el voto)
+    if any(bot in user_agent for bot in BOTS_SOSPECHOSOS):
+        print(f"[IGNORADO] User-Agent sospechoso: {user_agent}")
+        return "", 204  # No Content
+
     raw_query = request.query_string.decode()
     if ";" in raw_query and "&" not in raw_query:
         params = parse_qs(raw_query.replace(";", "&"))
@@ -57,7 +74,7 @@ def voto():
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
 
-            # Verificar si ya hay un voto con la misma combinación de envío e IP
+            # ✅ Verificar si ya existe un voto con el mismo envío e IP
             cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
             voto_existente = cur.fetchone()
 
@@ -66,7 +83,7 @@ def voto():
                 conn.close()
                 return render_template("ya_voto.html")
 
-            # Insertar el nuevo voto si no existía
+            # ✅ Registrar el nuevo voto
             cur.execute(
                 "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
                 (timestamp, sucursal, respuesta, envio, ip)
