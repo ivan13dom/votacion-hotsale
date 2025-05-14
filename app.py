@@ -7,7 +7,6 @@ from urllib.parse import parse_qs
 from zoneinfo import ZoneInfo  # estándar desde Python 3.9
 from collections import Counter, defaultdict
 
-
 app = Flask(__name__)
 
 def crear_tabla():
@@ -20,7 +19,8 @@ def crear_tabla():
             sucursal TEXT,
             respuesta TEXT,
             envio TEXT,
-            ip TEXT
+            ip TEXT,
+            comentario TEXT
         )
     ''')
     conn.commit()
@@ -33,8 +33,6 @@ crear_tabla()
 def home():
     return "Servidor activo"
 
-
-# Lista de user agents típicos de bots o servicios de previsualización
 BOTS_SOSPECHOSOS = [
     "bot", "crawler", "spider", "preview", "facebookexternalhit", "whatsapp",
     "telegrambot", "slackbot", "twitterbot", "linkedinbot", "embedly",
@@ -44,8 +42,6 @@ BOTS_SOSPECHOSOS = [
 ]
 
 import logging
-
-# Configurá el logger si no lo hiciste antes
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 @app.route("/voto")
@@ -55,8 +51,7 @@ def voto():
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip:
         ip = ip.split(',')[0].strip()
-    
-    # Detectar bots
+
     es_bot = any(bot in user_agent for bot in BOTS_SOSPECHOSOS)
 
     raw_query = request.query_string.decode()
@@ -72,19 +67,12 @@ def voto():
 
     logging.info(f"[INTENTO] IP={ip} BOT={es_bot} UA='{user_agent}' Referer='{referer}' Envio='{envio}' Sucursal='{sucursal}' Respuesta='{respuesta}'")
 
-
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if ip:
-        ip = ip.split(',')[0].strip()
-
     timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
 
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-
-            # ✅ Verificar si ya existe un voto con el mismo envío e IP
             cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
             voto_existente = cur.fetchone()
 
@@ -93,7 +81,6 @@ def voto():
                 conn.close()
                 return render_template("ya_voto.html")
 
-            # ✅ Registrar el nuevo voto
             cur.execute(
                 "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
                 (timestamp, sucursal, respuesta, envio, ip)
@@ -101,7 +88,7 @@ def voto():
             conn.commit()
             cur.close()
             conn.close()
-            return redirect("/gracias")
+            return redirect(f"/gracias?envio={envio}&ip={ip}")
 
         except Exception as e:
             return f"Error al guardar en la base de datos: {e}", 500
@@ -110,7 +97,32 @@ def voto():
 
 @app.route("/gracias")
 def gracias():
-    return render_template("gracias.html")
+    envio = request.args.get("envio")
+    ip = request.args.get("ip")
+    return render_template("gracias.html", envio=envio, ip=ip)
+
+@app.route("/comentario", methods=["POST"])
+def comentario():
+    comentario = request.form.get("comentario")
+    envio = request.form.get("envio")
+    ip = request.form.get("ip")
+
+    if comentario and envio and ip:
+        try:
+            conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE votos SET comentario = %s WHERE envio = %s AND ip = %s",
+                (comentario, envio, ip)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            return "\u00a1Gracias por tu comentario!"
+        except Exception as e:
+            return f"Error al guardar el comentario: {e}", 500
+    else:
+        return "Datos incompletos", 400
 
 @app.route("/descargar")
 def descargar():
@@ -121,7 +133,7 @@ def descargar():
         rows = cur.fetchall()
         conn.close()
 
-        output = [['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip']]
+        output = [['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip', 'comentario']]
         for row in rows:
             timestamp = row[1]
             from datetime import datetime
@@ -136,7 +148,7 @@ def descargar():
             else:
                 formatted_timestamp = ""
 
-            output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5]])
+            output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5], row[6]])
 
         import io
         csv_output = io.StringIO()
@@ -152,7 +164,6 @@ def descargar():
 
     except Exception as e:
         return f"Error al acceder a los datos: {e}", 500
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -174,7 +185,6 @@ def dashboard():
 
     for envio, (sucursal, respuesta, timestamp) in votos_unicos.items():
         if respuesta.strip().lower() == "positivo":
-
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
         votos_por_dia[fecha] += 1
@@ -183,21 +193,17 @@ def dashboard():
     votos_dia = sorted(votos_por_dia.items())
     ultimos_votos = sorted(ultimos_votos, key=lambda x: x[1], reverse=True)[:100]
 
-    # Datos para el gráfico de votos por día
     labels = [fecha.strftime("%Y-%m-%d") for fecha, _ in votos_dia]
     data = [cantidad for _, cantidad in votos_dia]
 
-   # Ordenar por cantidad de votos positivos (de mayor a menor)
     top_positivos = sorted(positivos_por_sucursal.items(), key=lambda x: x[1], reverse=True)
 
     return render_template("dashboard.html",
-                       top_positivos=top_positivos,
-                       votos_dia=votos_dia,
-                       ultimos_votos=ultimos_votos,
-                       labels=labels,
-                       data=data)
-
-
+                           top_positivos=top_positivos,
+                           votos_dia=votos_dia,
+                           ultimos_votos=ultimos_votos,
+                           labels=labels,
+                           data=data)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
