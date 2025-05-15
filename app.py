@@ -51,12 +51,27 @@ def home():
     return "Servidor activo"
 
 BOTS_SOSPECHOSOS = [
-    "bot", "crawler", "spider", "preview", "facebookexternalhit", "whatsapp",
-    "telegrambot", "slackbot", "twitterbot", "linkedinbot", "embedly",
-    "quora link preview", "pinterest", "discordbot", "vkshare", "skypeuripreview",
-    "nuzzel", "outlook", "microsoft office", "applemail", "thunderbird",
-    "googleimageproxy", "gmailimageproxy", "gmail", "outlook", "yahoo"
+    # General bots
+    "bot", "spider", "crawl", "crawler", "index", "scrapy",
+    
+    # Email clients que previsualizan
+    "applemail", "thunderbird", "gmail", "outlook", "windowslive", "emailpreview",
+
+    # Proxys de previsualización
+    "googleimageproxy", "gmailimageproxy", "fetcher", "python-requests", "axios", "curl", "httpclient",
+
+    # Redes sociales y apps de mensajería
+    "facebookexternalhit", "facebot", "whatsapp", "telegrambot", "discordbot",
+    "slackbot", "linkedinbot", "twitterbot", "pinterest", "vkshare", "skypeuripreview",
+    "nuzzel", "embedly", "quora link preview",
+
+    # Web scrapers o rastreadores comunes
+    "headless", "phantomjs", "selenium", "puppeteer", "java", "go-http-client", "aiohttp",
+
+    # Otras apps automatizadas
+    "okhttp", "libwww", "w3c_validator", "preview", "feedfetcher", "postman", "insomnia"
 ]
+
 
 @app.route("/voto")
 def voto():
