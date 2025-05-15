@@ -83,8 +83,8 @@ def voto():
 
     es_bot = any(bot in user_agent for bot in BOTS_SOSPECHOSOS)
     if es_bot:
-        logging.info(f"[BLOQUEADO] Bot detectado. Voto descartado. IP={ip} Envio={envio}")
-        return render_template("ya_voto.html")  # o una página de error más neutral
+        logging.info(f"[BLOQUEADO] Bot detectado. Voto descartado. IP={ip}")
+        return render_template("ya_voto.html")
 
     raw_query = request.query_string.decode()
     if ";" in raw_query and "&" not in raw_query:
@@ -129,9 +129,9 @@ def voto():
                 conn.close()
                 return render_template("ya_voto.html")
 
-            # Registrar voto válido
-            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
-                        (timestamp, sucursal, respuesta, envio, ip))
+            # ✅ Registrar voto válido con comentario vacío por defecto
+            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip, comentario) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (timestamp, sucursal, respuesta, envio, ip, ""))  # también podés poner None si preferís NULL
             conn.commit()
             cur.close()
             conn.close()
@@ -141,6 +141,7 @@ def voto():
             return f"Error al guardar en la base de datos: {e}", 500
     else:
         return "Datos incompletos", 400
+
 
 @app.route("/gracias")
 def gracias():
