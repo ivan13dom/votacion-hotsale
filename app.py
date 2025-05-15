@@ -67,6 +67,9 @@ def voto():
         ip = ip.split(',')[0].strip()
 
     es_bot = any(bot in user_agent for bot in BOTS_SOSPECHOSOS)
+    if es_bot:
+        logging.info(f"[BLOQUEADO] Bot detectado. Voto descartado. IP={ip} Envio={envio}")
+        return render_template("ya_voto.html")  # o una página de error más neutral
 
     raw_query = request.query_string.decode()
     if ";" in raw_query and "&" not in raw_query:
