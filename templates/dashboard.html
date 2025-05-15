@@ -77,15 +77,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for envio, timestamp, sucursal, respuesta in ultimos_votos %}
-                            <tr>
-                                <td>{{ envio }}</td>
-                                <td>{{ timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td>{{ sucursal }}</td>
-                                <td>{{ respuesta }}</td>
-                                <td>{{ comentario }}</td>
-                            </tr>
-                        {% endfor %}
+                        {% for envio, timestamp, sucursal, respuesta, comentario in ultimos_votos %}
+                        <tr>
+                            <td>{{ envio }}</td>
+                            <td>{{ timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ sucursal }}</td>
+                            <td>{{ respuesta }}</td>
+                            <td>{{ comentario or '' }}</td>
+                        </tr>
+                    {% endfor %}
+                    
                     </tbody>
                 </table>
             </div>

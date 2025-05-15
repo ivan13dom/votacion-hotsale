@@ -212,7 +212,7 @@ def descargar():
 def dashboard():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
-    cur.execute("SELECT sucursal, respuesta, envio, timestamp FROM votos")
+    cur.execute("SELECT sucursal, respuesta, envio, timestamp, comentario FROM votos")
     votos = cur.fetchall()
     cur.close()
     conn.close()
@@ -231,7 +231,7 @@ def dashboard():
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
         votos_por_dia[fecha] += 1
-        ultimos_votos.append((envio, timestamp, sucursal, respuesta))
+        ultimos_votos.append((envio, timestamp, sucursal, respuesta, comentario))
 
     votos_dia = sorted(votos_por_dia.items())
     ultimos_votos = sorted(ultimos_votos, key=lambda x: x[1], reverse=True)[:100]
