@@ -218,15 +218,15 @@ def dashboard():
     conn.close()
 
     votos_unicos = {}
-    for sucursal, respuesta, envio, timestamp in votos:
+    for sucursal, respuesta, envio, timestamp, comentario in votos:
         if envio not in votos_unicos:
-            votos_unicos[envio] = (sucursal, respuesta, timestamp)
+            votos_unicos[envio] = (sucursal, respuesta, timestamp, comentario)
 
     positivos_por_sucursal = Counter()
     votos_por_dia = defaultdict(int)
     ultimos_votos = []
 
-    for envio, (sucursal, respuesta, timestamp) in votos_unicos.items():
+    for envio, (sucursal, respuesta, timestamp, comentario) in votos_unicos.items():
         if respuesta.strip().lower() == "positivo":
             positivos_por_sucursal[sucursal] += 1
         fecha = timestamp.date()
