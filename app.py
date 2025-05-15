@@ -4,12 +4,18 @@ import os
 import csv
 from datetime import datetime
 from urllib.parse import parse_qs
-from zoneinfo import ZoneInfo  # estándar desde Python 3.9
+from zoneinfo import ZoneInfo
 from collections import Counter, defaultdict
+import logging
 
 app = Flask(__name__)
 
-def crear_tabla():
+# Configuración del logger
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# Crear tablas
+
+def crear_tablas():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cur = conn.cursor()
     cur.execute('''
@@ -23,11 +29,22 @@ def crear_tabla():
             comentario TEXT
         )
     ''')
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS intentos (
+            id SERIAL PRIMARY KEY,
+            timestamp TIMESTAMPTZ,
+            sucursal TEXT,
+            respuesta TEXT,
+            envio TEXT,
+            ip TEXT,
+            motivo TEXT
+        )
+    ''')
     conn.commit()
     cur.close()
     conn.close()
 
-crear_tabla()
+crear_tablas()
 
 @app.route("/")
 def home():
@@ -40,9 +57,6 @@ BOTS_SOSPECHOSOS = [
     "nuzzel", "outlook", "microsoft office", "applemail", "thunderbird",
     "googleimageproxy", "gmailimageproxy", "gmail", "outlook", "yahoo"
 ]
-
-import logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 @app.route("/voto")
 def voto():
@@ -73,18 +87,33 @@ def voto():
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
-            voto_existente = cur.fetchone()
 
-            if voto_existente:
+            # Verificar IP+envío
+            cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
+            if cur.fetchone():
+                cur.execute("INSERT INTO intentos (timestamp, sucursal, respuesta, envio, ip, motivo) VALUES (%s, %s, %s, %s, %s, %s)",
+                            (timestamp, sucursal, respuesta, envio, ip, "duplicado_envio_ip"))
+                conn.commit()
                 cur.close()
                 conn.close()
                 return render_template("ya_voto.html")
 
-            cur.execute(
-                "INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
-                (timestamp, sucursal, respuesta, envio, ip)
-            )
+            # Verificar múltiples votos simultáneos
+            cur.execute("""
+                SELECT COUNT(*) FROM votos 
+                WHERE envio = %s AND timestamp > NOW() - INTERVAL '1 second'
+            """, (envio,))
+            if cur.fetchone()[0] > 0:
+                cur.execute("INSERT INTO intentos (timestamp, sucursal, respuesta, envio, ip, motivo) VALUES (%s, %s, %s, %s, %s, %s)",
+                            (timestamp, sucursal, respuesta, envio, ip, "ventana_1s"))
+                conn.commit()
+                cur.close()
+                conn.close()
+                return render_template("ya_voto.html")
+
+            # Registrar voto válido
+            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip) VALUES (%s, %s, %s, %s, %s)",
+                        (timestamp, sucursal, respuesta, envio, ip))
             conn.commit()
             cur.close()
             conn.close()
@@ -111,14 +140,12 @@ def comentario():
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
             cur = conn.cursor()
-            cur.execute(
-                "UPDATE votos SET comentario = %s WHERE envio = %s AND ip = %s",
-                (comentario, envio, ip)
-            )
+            cur.execute("UPDATE votos SET comentario = %s WHERE envio = %s AND ip = %s",
+                        (comentario, envio, ip))
             conn.commit()
             cur.close()
             conn.close()
-            return "\u00a1Gracias por tu comentario!"
+            return "¡Gracias por tu comentario!"
         except Exception as e:
             return f"Error al guardar el comentario: {e}", 500
     else:
@@ -135,20 +162,18 @@ def descargar():
 
         output = [['id', 'timestamp', 'sucursal', 'respuesta', 'envio', 'ip', 'comentario']]
         for row in rows:
-            timestamp = row[1]
-            from datetime import datetime
-            if isinstance(timestamp, datetime):
-                formatted_timestamp = timestamp.strftime("%d/%m/%Y %H:%M:%S")
-            elif isinstance(timestamp, str):
+            ts = row[1]
+            if isinstance(ts, datetime):
+                formatted_ts = ts.strftime("%d/%m/%Y %H:%M:%S")
+            elif isinstance(ts, str):
                 try:
-                    parsed = datetime.fromisoformat(timestamp)
-                    formatted_timestamp = parsed.strftime("%d/%m/%Y %H:%M:%S")
+                    parsed = datetime.fromisoformat(ts)
+                    formatted_ts = parsed.strftime("%d/%m/%Y %H:%M:%S")
                 except ValueError:
-                    formatted_timestamp = timestamp
+                    formatted_ts = ts
             else:
-                formatted_timestamp = ""
-
-            output.append([row[0], formatted_timestamp, row[2], row[3], row[4], row[5], row[6]])
+                formatted_ts = ""
+            output.append([row[0], formatted_ts, row[2], row[3], row[4], row[5], row[6]])
 
         import io
         csv_output = io.StringIO()
