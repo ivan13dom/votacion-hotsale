@@ -73,74 +73,116 @@ BOTS_SOSPECHOSOS = [
 ]
 
 
-@app.route("/voto")
+@app.route("/voto", methods=["GET", "HEAD"])
 def voto():
+    # --- Cabeceras básicas ---
     user_agent = request.headers.get("User-Agent", "").lower()
-    referer = request.headers.get("Referer", "N/A")
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    referer    = request.headers.get("Referer", "N/A")
+    ip         = request.headers.get("X-Forwarded-For", request.remote_addr)
     if ip:
-        ip = ip.split(',')[0].strip()
+        ip = ip.split(",")[0].strip()
 
+    # --- Parseo de parámetros ---
+    raw_q = request.query_string.decode()
+    if ";" in raw_q and "&" not in raw_q:
+        params    = parse_qs(raw_q.replace(";", "&"))
+        sucursal  = params.get("sucursal", [None])[0]
+        respuesta = params.get("respuesta", [None])[0]
+        envio     = params.get("envio", [None])[0]
+    else:
+        sucursal  = request.args.get("sucursal")
+        respuesta = request.args.get("respuesta")
+        envio     = request.args.get("envio")
+
+    # --- 0) Solo aceptar GET (descartar HEAD) ---
+    if request.method != "GET":
+        logging.info(f"[IGNORADO] Método no-GET: {request.method} Envio={envio} IP={ip}")
+        return ("", 204)
+
+    # --- 1) Filtrar por Accept ---
+    accept = request.headers.get("Accept", "")
+    if "text/html" not in accept:
+        logging.info(f"[IGNORADO] Accept no válido: {accept} Envio={envio} IP={ip}")
+        return ("", 204)
+
+    # --- 2) Requerir Accept-Language ---
+    if not request.headers.get("Accept-Language"):
+        logging.info(f"[IGNORADO] Sin Accept-Language Envio={envio} IP={ip}")
+        return ("", 204)
+
+    # --- 3) Detectar bots vía User-Agent ---
     es_bot = any(bot in user_agent for bot in BOTS_SOSPECHOSOS)
     if es_bot:
-        logging.info(f"[BLOQUEADO] Bot detectado. Voto descartado. IP={ip}")
+        logging.info(f"[BLOQUEADO] Bot detectado. Voto descartado. IP={ip} Envio={envio}")
         return render_template("ya_voto.html")
 
-    raw_query = request.query_string.decode()
-    if ";" in raw_query and "&" not in raw_query:
-        params = parse_qs(raw_query.replace(";", "&"))
-        sucursal = params.get("sucursal", [None])[0]
-        respuesta = params.get("respuesta", [None])[0]
-        envio = params.get("envio", [None])[0]
-    else:
-        sucursal = request.args.get("sucursal")
-        respuesta = request.args.get("respuesta")
-        envio = request.args.get("envio")
-
-    logging.info(f"[INTENTO] IP={ip} BOT={es_bot} UA='{user_agent}' Referer='{referer}' Envio='{envio}' Sucursal='{sucursal}' Respuesta='{respuesta}'")
+    logging.info(
+        f"[INTENTO] IP={ip} BOT={es_bot} UA='{user_agent}' "
+        f"Referer='{referer}' Envio='{envio}' Sucursal='{sucursal}' Respuesta='{respuesta}'"
+    )
 
     timestamp = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
 
+    # --- 4) Lógica de guardado ---
     if sucursal and respuesta and envio:
         try:
             conn = psycopg2.connect(os.environ['DATABASE_URL'])
-            cur = conn.cursor()
+            cur  = conn.cursor()
 
-            # Verificar IP+envío
-            cur.execute("SELECT 1 FROM votos WHERE envio = %s AND ip = %s LIMIT 1", (envio, ip))
+            # 4a) Duplicado por envío+IP
+            cur.execute(
+                "SELECT 1 FROM votos WHERE envio=%s AND ip=%s LIMIT 1",
+                (envio, ip)
+            )
             if cur.fetchone():
-                cur.execute("INSERT INTO intentos (timestamp, sucursal, respuesta, envio, ip, motivo) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (timestamp, sucursal, respuesta, envio, ip, "duplicado_envio_ip"))
+                cur.execute(
+                    "INSERT INTO intentos "
+                    "(timestamp, sucursal, respuesta, envio, ip, motivo) "
+                    "VALUES (%s,%s,%s,%s,%s,%s)",
+                    (timestamp, sucursal, respuesta, envio, ip, "duplicado_envio_ip")
+                )
                 conn.commit()
-                cur.close()
-                conn.close()
+                cur.close(); conn.close()
                 return render_template("ya_voto.html")
 
-            # Verificar múltiples votos simultáneos
-            cur.execute("""
-                SELECT COUNT(*) FROM votos 
-                WHERE envio = %s AND timestamp > NOW() - INTERVAL '1 second'
-            """, (envio,))
+            # 4b) Ventana de 1 segundo
+            cur.execute(
+                """
+                SELECT COUNT(*) FROM votos
+                WHERE envio = %s
+                  AND timestamp > NOW() - INTERVAL '1 second'
+                """,
+                (envio,)
+            )
             if cur.fetchone()[0] > 0:
-                cur.execute("INSERT INTO intentos (timestamp, sucursal, respuesta, envio, ip, motivo) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (timestamp, sucursal, respuesta, envio, ip, "ventana_1s"))
+                cur.execute(
+                    "INSERT INTO intentos "
+                    "(timestamp, sucursal, respuesta, envio, ip, motivo) "
+                    "VALUES (%s,%s,%s,%s,%s,%s)",
+                    (timestamp, sucursal, respuesta, envio, ip, "ventana_1s")
+                )
                 conn.commit()
-                cur.close()
-                conn.close()
+                cur.close(); conn.close()
                 return render_template("ya_voto.html")
 
-            # ✅ Registrar voto válido con comentario vacío por defecto
-            cur.execute("INSERT INTO votos (timestamp, sucursal, respuesta, envio, ip, comentario) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (timestamp, sucursal, respuesta, envio, ip, ""))  # también podés poner None si preferís NULL
+            # 4c) Voto válido (comentario vacío)
+            cur.execute(
+                "INSERT INTO votos "
+                "(timestamp, sucursal, respuesta, envio, ip, comentario) "
+                "VALUES (%s,%s,%s,%s,%s,%s)",
+                (timestamp, sucursal, respuesta, envio, ip, "")
+            )
             conn.commit()
-            cur.close()
-            conn.close()
+            cur.close(); conn.close()
             return redirect(f"/gracias?envio={envio}&ip={ip}")
 
         except Exception as e:
+            logging.error(f"Error en /voto: {e}")
             return f"Error al guardar en la base de datos: {e}", 500
-    else:
-        return "Datos incompletos", 400
+
+    # Datos incompletos en la URL
+    return "Datos incompletos", 400
+
 
 
 @app.route("/gracias")
